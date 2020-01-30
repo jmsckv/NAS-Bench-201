@@ -6,6 +6,16 @@ import numpy as np
 from pprint import pprint
 
 
+def dict_to_array(d):
+    return np.asarray(list(d.values()))
+
+def rank_columns_of_2d_array(a):
+    # note that we "negate" the ordering
+    # so the best architecture per epoch is indicated by a 0, the second-best by a 1, etc.
+    # we can then simply use a Boolean comparison such as e.g. <2 to see whether an architecture is in the top3 at a given point in time
+    return a.argsort(axis=0)[::-1]
+
+
 def read_in_preprocessed_data(path):
     """ Reading in the preprocessed data which is serialized as a dictionary"""
     with open (path, 'rb') as rf:
@@ -13,7 +23,6 @@ def read_in_preprocessed_data(path):
     return record
 
 def get_index_of_max_or_min_element_in_list(li, criterion=max):
-    # note: we always get the first index if same max/min value occurs several times
     # note: we always get the first index if same max/min value occurs several times
     index = criterion(range(len(li)), key=li.__getitem__)
     return index
@@ -24,18 +33,21 @@ def get_index_and_element_of_max_or_min_element_in_list(li, criterion=max):
 
 def write_dict_of_lists_to_csv(outfn, dict_to_store, include_keys_as_header_col = True, debug_mode=False):
     with open(outfn, 'w') as csvfile:
-            if debug_mode:
-                w = csv.writer(sys.stderr)
-            else:
-                w = csv.writer(csvfile)
-            if include_keys_as_header_col:
-                w.writerow(dict_to_store.keys())
-            w.writerows(dict_to_store.values())
+        if debug_mode:
+            w = csv.writer(sys.stderr)
+        else:
+            w = csv.writer(csvfile)
+        if include_keys_as_header_col:
+            w.writerow(dict_to_store.keys())
+        w.writerows(dict_to_store.values())
     if not debug_mode:
         print(f'Finished writing dict to {outfn}.')
 
 
 def generate_summary_stats_from_list(li):
+    # TODO: for non-random algorithms we want 2 more stats:
+    # found best architecture in initial candidates: yes/no
+    #
     a = np.asarray(li)
     summary = dict()
     summary['max'] = max(a)
@@ -45,8 +57,6 @@ def generate_summary_stats_from_list(li):
     summary['std'] = np.std(a)
     summary['n_samples'] = len(li)
     return summary
-
-
 
 """
 # NOTE: THIS IS PROBABLY NOT THE ONLY RS BASELINE WE WANT..
@@ -93,4 +103,17 @@ l = [1,2,10,4,10,10]
 i = get_index_of_max_or_min_element_in_list(l)
 print(i)
 
+
+d = {1:[1,5,4],2:[4,2,6],3:[7,9,8]}
+a = dict_to_array(d)
+print(a)
+print(rank_columns_of_2d_array(a))
+
 """
+
+
+d = {1:[1,5,4],2:[4,2,6],3:[7,9,8]}
+a = dict_to_array(d)
+print(a)
+print(rank_columns_of_2d_array(a))
+
