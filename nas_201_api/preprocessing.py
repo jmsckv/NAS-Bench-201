@@ -1,10 +1,12 @@
 import os
+import numpy as np
 import pickle
 import random
 from tqdm import tqdm
 import logging
 from nas_201_api import NASBench201API as API
-from utils import get_index_of_max_or_min_element_in_list, write_dict_of_lists_to_csv
+from utils import get_index_of_max_or_min_element_in_list, write_dict_of_lists_to_csv, dict_to_array, rank_columns_of_2d_array
+
 
 RAWPATH = os.environ['NASBENCH_RAW']
 OUTPATH = os.environ['NASBENCH_OUT']
@@ -67,7 +69,7 @@ def validate_data(api=None, datasets=default_datasets, seeds=default_seeds, rawp
 
 
 
-def create_record(outpath,api, log_exceptions = True,dataset='cifar10-valid',epochs=200, best_so_far=True, store_CSV =True):
+def create_record(outpath,api, log_exceptions = True,dataset='cifar10-valid',epochs=200, best_so_far=True, store_CSV =True, store_np=True, precompute_ranks_per_epoch=True):
     """
     :param dataset: dataset for which we query api
     :param outpath: specify path where returned df gets serialized as CSV file
@@ -122,10 +124,16 @@ def create_record(outpath,api, log_exceptions = True,dataset='cifar10-valid',epo
     if store_CSV:
         out_fn = os.path.join(outpath, 'proc_data_' + dataset + '.csv')
         write_dict_of_lists_to_csv(out_fn, results, include_keys_as_header_col=False)
+    if store_np:
+        out_fn = os.path.join(outpath,  'proc_data_' + dataset + '.npy')
+        np.save(out_fn, dict_to_array(results))
+    if precompute_ranks_per_epoch:
+        out_fn = os.path.join(outpath, 'precomputed_ranks_per_epoch.npy')
+        np.save(out_fn, rank_columns_of_2d_array(dict_to_array(results)))
 
     print(f"Finished preprocessing for dataset {dataset}.")
 
-    return results, exceptions
+    results, exceptions
 
 
 def shuffle_data_n_times_and_store(outpath, max_i, n_samples=500, store_CSV = True):
@@ -144,6 +152,7 @@ def shuffle_data_n_times_and_store(outpath, max_i, n_samples=500, store_CSV = Tr
     if store_CSV:
         out_fn = os.path.join(outpath, 'precomputed_random_samples.csv')
         write_dict_of_lists_to_csv(out_fn, results, include_keys_as_header_col=False)
+
 
 
 def main():
